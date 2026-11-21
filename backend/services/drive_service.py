@@ -13,12 +13,18 @@ from typing import Any, Optional
 import httpx
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseDownload
 
 from auth.google_oauth import load_credentials
-from config import DRIVE_LIST_RPS, DRIVE_PAGE_SIZE, DRIVE_TRASH_RPS
+from config import DRIVE_LIST_RPS, DRIVE_PAGE_SIZE, DRIVE_TRASH_RPS, INCLUDE_VIDEOS
 
-# Drive query: images only (video support can be added by widening this).
-IMAGE_QUERY = "(mimeType contains 'image/') and trashed = false and 'me' in owners"
+# Drive query: images, plus videos when INCLUDE_VIDEOS is enabled.
+_MIME_CLAUSE = (
+    "(mimeType contains 'image/' or mimeType contains 'video/')"
+    if INCLUDE_VIDEOS
+    else "(mimeType contains 'image/')"
+)
+IMAGE_QUERY = f"{_MIME_CLAUSE} and trashed = false and 'me' in owners"
 FILE_FIELDS = (
     "nextPageToken, files(id, name, mimeType, size, createdTime, "
     "modifiedTime, thumbnailLink, webViewLink)"
@@ -130,6 +136,23 @@ async def download_thumbnail(
         resp.raise_for_status()
         dest.write_bytes(resp.content)
     return str(dest)
+
+
+async def download_file_media(file_id: str, dest_path: str) -> str:
+    """Download a file's full media bytes to dest_path (used for videos)."""
+    await _list_limiter.wait()
+
+    def _call() -> None:
+        service = _service()
+        request = service.files().get_media(fileId=file_id)
+        with open(dest_path, "wb") as fh:
+            downloader = MediaIoBaseDownload(fh, request, chunksize=8 * 1024 * 1024)
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+
+    await asyncio.to_thread(_call)
+    return dest_path
 
 
 async def _set_trashed(file_ids: list[str], trashed: bool) -> dict[str, list]:

@@ -33,6 +33,19 @@ async def start_scan(background: BackgroundTasks) -> dict:
     return {"scan_id": scan_id, "resumed": resume_token is not None}
 
 
+@router.post("/retry-failed")
+async def retry_failed(background: BackgroundTasks) -> dict:
+    if scanner.is_running():
+        raise HTTPException(409, "A scan is already running.")
+    async with get_db() as db:
+        count = await models.failed_count(db)
+    if count == 0:
+        return {"retry_id": None, "count": 0}
+    retry_id = f"retry_{uuid.uuid4().hex[:12]}"
+    background.add_task(scanner.run_retry, retry_id)
+    return {"retry_id": retry_id, "count": count}
+
+
 @router.get("/status")
 async def scan_status() -> dict:
     async with get_db() as db:

@@ -222,6 +222,41 @@ async def ids_matching_filter(
     return [r["id"] for r in await cur.fetchall()]
 
 
+async def failed_items(db: aiosqlite.Connection) -> list[dict]:
+    """Return failed photos/videos shaped for the scanner's item handlers."""
+    cur = await db.execute(
+        """
+        SELECT id, name, mime_type, size_bytes, thumbnail_url, web_view_link
+        FROM photos
+        WHERE classification_status = 'failed' AND trashed = 0
+        """
+    )
+    return [dict(r) for r in await cur.fetchall()]
+
+
+async def reset_failed_to_pending(
+    db: aiosqlite.Connection, file_ids: list[str]
+) -> None:
+    if not file_ids:
+        return
+    placeholders = ",".join("?" for _ in file_ids)
+    await db.execute(
+        f"""
+        UPDATE photos
+        SET classification_status = 'pending', classification_error = NULL
+        WHERE id IN ({placeholders})
+        """,
+        file_ids,
+    )
+
+
+async def failed_count(db: aiosqlite.Connection) -> int:
+    cur = await db.execute(
+        "SELECT COUNT(*) AS c FROM photos WHERE classification_status = 'failed' AND trashed = 0"
+    )
+    return (await cur.fetchone())["c"]
+
+
 async def get_photo(db: aiosqlite.Connection, file_id: str) -> Optional[dict]:
     cur = await db.execute("SELECT * FROM photos WHERE id = ?", (file_id,))
     row = await cur.fetchone()
@@ -384,6 +419,7 @@ async def get_stats(db: aiosqlite.Connection) -> dict[str, Any]:
         "total_photos": row["c"],
         "total_size_bytes": row["s"],
         "estimated_recoverable_bytes": recoverable,
+        "failed_count": await failed_count(db),
         "by_type": await _grouped(db, "photo_type"),
         "by_keep_signal": await _grouped(db, "keep_signal"),
         "by_quality": await _grouped(db, "quality_signal"),

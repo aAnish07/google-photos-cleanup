@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { Check, Play } from "lucide-react";
 import {
   formatBytes,
   KEEP_SIGNAL_COLORS,
@@ -20,6 +20,7 @@ export default function PhotoCard({ photo, selected, onToggle, onOpen }: Props) 
   const date = photo.created_time
     ? new Date(photo.created_time).toLocaleDateString()
     : "";
+  const isVideo = (photo.mime_type ?? "").startsWith("video/");
 
   return (
     <div
@@ -48,7 +49,10 @@ export default function PhotoCard({ photo, selected, onToggle, onOpen }: Props) 
         </span>
       )}
 
-      <button onClick={onOpen} className="block aspect-square w-full bg-slate-100">
+      <button
+        onClick={onOpen}
+        className="relative block aspect-square w-full bg-slate-100"
+      >
         <img
           src={`/api/photos/${photo.id}/image`}
           alt={photo.name}
@@ -58,6 +62,11 @@ export default function PhotoCard({ photo, selected, onToggle, onOpen }: Props) 
             (e.target as HTMLImageElement).style.visibility = "hidden";
           }}
         />
+        {isVideo && (
+          <span className="pointer-events-none absolute bottom-2 left-2 flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">
+            <Play className="h-3 w-3 fill-white" /> Video
+          </span>
+        )}
       </button>
 
       <div className="px-2 py-1.5">

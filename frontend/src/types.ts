@@ -43,6 +43,7 @@ export interface Stats {
   total_photos: number;
   total_size_bytes: number;
   estimated_recoverable_bytes: number;
+  failed_count: number;
   by_type: Record<string, GroupStat>;
   by_keep_signal: Record<string, GroupStat>;
   by_quality: Record<string, GroupStat>;

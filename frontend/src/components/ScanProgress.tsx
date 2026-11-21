@@ -1,20 +1,34 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Play, RefreshCw, StopCircle } from "lucide-react";
+import { AlertTriangle, Loader2, Play, RefreshCw, StopCircle } from "lucide-react";
 import { client } from "../api/client";
 import { useScan } from "../hooks/useScan";
+import { useStats } from "../hooks/usePhotos";
 
 export default function ScanProgress({ authed }: { authed: boolean }) {
   const { data } = useScan();
+  const { data: stats } = useStats();
   const qc = useQueryClient();
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["scan-status"] });
+    qc.invalidateQueries({ queryKey: ["stats"] });
+    qc.invalidateQueries({ queryKey: ["photos"] });
+  };
 
   const start = useMutation({
     mutationFn: () => client.startScan(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["scan-status"] }),
+    onSuccess: invalidate,
   });
   const cancel = useMutation({
     mutationFn: () => client.cancelScan(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["scan-status"] }),
+    onSuccess: invalidate,
   });
+  const retry = useMutation({
+    mutationFn: () => client.retryFailed(),
+    onSuccess: invalidate,
+  });
+
+  const failedCount = stats?.failed_count ?? 0;
 
   const running = data?.running;
   const latest = data?.latest;
@@ -58,6 +72,17 @@ export default function ScanProgress({ authed }: { authed: boolean }) {
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-slate-500">{label}</span>
+      {failedCount > 0 && (
+        <button
+          disabled={retry.isPending}
+          onClick={() => retry.mutate()}
+          className="flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+          title="Re-classify photos and videos that failed"
+        >
+          <AlertTriangle className="h-4 w-4" />
+          Retry {failedCount.toLocaleString()} failed
+        </button>
+      )}
       <button
         disabled={!authed || start.isPending}
         onClick={() => start.mutate()}

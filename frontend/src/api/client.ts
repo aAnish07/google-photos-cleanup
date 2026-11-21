@@ -78,6 +78,11 @@ export const client = {
     return data;
   },
 
+  async retryFailed() {
+    const { data } = await api.post("/api/scan/retry-failed");
+    return data as { retry_id: string | null; count: number };
+  },
+
   async librarySize() {
     const { data } = await api.get("/api/scan/library-size");
     return data as { count: number; total_size_bytes: number };

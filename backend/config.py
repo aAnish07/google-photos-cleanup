@@ -56,6 +56,17 @@ CLASSIFY_CONCURRENCY = 8
 # Drive listing page size
 DRIVE_PAGE_SIZE = 100
 
+# --- Video scanning ---
+# Include videos in scans. Each video is sampled into VIDEO_FRAMES frames at
+# evenly spaced positions (mid-interval), each frame is classified, and the
+# per-frame answers are aggregated into one keep/delete judgment for the video.
+INCLUDE_VIDEOS = os.getenv("INCLUDE_VIDEOS", "true").lower() in ("1", "true", "yes")
+VIDEO_FRAMES = int(os.getenv("VIDEO_FRAMES", "10"))  # frames sampled per video
+# Videos are downloaded in full to sample frames; cap the size we'll fetch.
+# Over this, we fall back to classifying the Drive thumbnail (single frame).
+MAX_VIDEO_BYTES = int(os.getenv("MAX_VIDEO_BYTES", str(500 * 1024 * 1024)))
+VIDEO_CONCURRENCY = int(os.getenv("VIDEO_CONCURRENCY", "2"))
+
 # CORS
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
 

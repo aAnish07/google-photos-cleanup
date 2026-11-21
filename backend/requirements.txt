@@ -7,3 +7,4 @@ httpx>=0.25
 aiosqlite>=0.19
 Pillow>=10.0
 python-dotenv>=1.0
+opencv-python-headless>=4.9
