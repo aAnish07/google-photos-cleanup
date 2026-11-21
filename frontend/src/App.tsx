@@ -19,6 +19,19 @@ import StatsPanel from "./components/StatsPanel";
 
 const PER_PAGE = 50;
 
+function hasActiveFilters(f: Filters): boolean {
+  return (
+    f.photo_type.length > 0 ||
+    f.keep_signal.length > 0 ||
+    f.quality_signal.length > 0 ||
+    f.has_text !== "" ||
+    !!f.date_from ||
+    !!f.date_to ||
+    f.min_size != null ||
+    f.min_confidence > 0
+  );
+}
+
 export default function App() {
   const qc = useQueryClient();
   const { data: auth } = useAuthStatus();
@@ -183,6 +196,7 @@ export default function App() {
             selectedCount={selected.size}
             selectedSizeBytes={selectedSize}
             filterTotal={data?.total ?? 0}
+            hasActiveFilters={hasActiveFilters(filters)}
             busy={busy}
             undoAvailable={undoAvailable}
             onClear={() => setSelected(new Set())}

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Loader2, Trash2, Undo2, X } from "lucide-react";
+import { Filter, Loader2, Trash2, Undo2, X } from "lucide-react";
 import { formatBytes } from "../types";
 
 interface Props {
   selectedCount: number;
   selectedSizeBytes: number;
   filterTotal: number;
+  hasActiveFilters: boolean;
   busy: boolean;
   undoAvailable: boolean;
   onClear: () => void;
@@ -18,6 +19,7 @@ export default function BulkActions({
   selectedCount,
   selectedSizeBytes,
   filterTotal,
+  hasActiveFilters,
   busy,
   undoAvailable,
   onClear,
@@ -27,13 +29,19 @@ export default function BulkActions({
 }: Props) {
   const [confirm, setConfirm] = useState(false);
 
-  if (selectedCount === 0 && !undoAvailable) return null;
+  const hasSelection = selectedCount > 0;
+  // Offer "trash all matching" whenever filters are active and something matches
+  // (even with no manual selection). Guarded on hasActiveFilters so it can never
+  // mean "trash the entire library".
+  const canTrashByFilter = hasActiveFilters && filterTotal > 0;
+
+  if (!hasSelection && !undoAvailable && !canTrashByFilter) return null;
 
   return (
     <>
-      <div className="sticky bottom-0 z-20 flex items-center justify-between border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] backdrop-blur">
+      <div className="sticky bottom-0 z-20 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-2px_8px_rgba(0,0,0,0.05)] backdrop-blur">
         <div className="flex items-center gap-3 text-sm">
-          {selectedCount > 0 ? (
+          {hasSelection ? (
             <>
               <button
                 onClick={onClear}
@@ -45,15 +53,12 @@ export default function BulkActions({
                 {selectedCount.toLocaleString()} selected ·{" "}
                 {formatBytes(selectedSizeBytes)}
               </span>
-              {filterTotal > selectedCount && (
-                <button
-                  onClick={onTrashByFilter}
-                  className="text-blue-600 hover:underline"
-                >
-                  Trash all {filterTotal.toLocaleString()} matching filter
-                </button>
-              )}
             </>
+          ) : canTrashByFilter ? (
+            <span className="flex items-center gap-1.5 text-slate-600">
+              <Filter className="h-4 w-4 text-slate-400" />
+              {filterTotal.toLocaleString()} photos match the current filters
+            </span>
           ) : (
             <span className="text-slate-400">No selection</span>
           )}
@@ -69,7 +74,20 @@ export default function BulkActions({
               <Undo2 className="h-4 w-4" /> Undo last trash
             </button>
           )}
-          {selectedCount > 0 && (
+
+          {canTrashByFilter && (
+            <button
+              onClick={onTrashByFilter}
+              disabled={busy}
+              className="flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+              title="Move every photo matching the current filters to Trash"
+            >
+              <Trash2 className="h-4 w-4" />
+              Trash all {filterTotal.toLocaleString()} matching
+            </button>
+          )}
+
+          {hasSelection && (
             <button
               onClick={() => setConfirm(true)}
               disabled={busy}
@@ -80,7 +98,7 @@ export default function BulkActions({
               ) : (
                 <Trash2 className="h-4 w-4" />
               )}
-              Move {selectedCount.toLocaleString()} to Trash
+              Move {selectedCount.toLocaleString()} selected to Trash
             </button>
           )}
         </div>
