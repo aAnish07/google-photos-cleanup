@@ -1,0 +1,9 @@
+fastapi>=0.104
+uvicorn[standard]>=0.24
+google-api-python-client>=2.100
+google-auth-oauthlib>=1.1
+google-auth-httplib2>=0.1
+httpx>=0.25
+aiosqlite>=0.19
+Pillow>=10.0
+python-dotenv>=1.0

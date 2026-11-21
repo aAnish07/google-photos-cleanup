@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Secrets & credentials — NEVER commit
+.env
+backend/.env
+backend/auth/credentials.json
+backend/auth/token.json
+token.json
+credentials.json
+
+# Local data / cache
+backend/data/
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
