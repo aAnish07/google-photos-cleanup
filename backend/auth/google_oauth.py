@@ -54,20 +54,29 @@ def build_flow(state: Optional[str] = None) -> Flow:
     )
 
 
-def get_authorization_url() -> tuple[str, str]:
-    """Return (authorization_url, state) to redirect the user to consent."""
+def get_authorization_url() -> tuple[str, str, str]:
+    """Return (authorization_url, state, code_verifier) for the consent redirect.
+
+    The PKCE code_verifier is generated here and must be supplied again at token
+    exchange, so the caller is responsible for persisting it across the two
+    requests (login -> callback).
+    """
     flow = build_flow()
     url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",  # force a refresh token on re-auth
     )
-    return url, state
+    return url, state, flow.code_verifier
 
 
-def fetch_and_store_token(authorization_response_url: str, state: str) -> None:
+def fetch_and_store_token(
+    authorization_response_url: str, state: str, code_verifier: Optional[str]
+) -> None:
     """Exchange the callback URL for tokens and persist them."""
     flow = build_flow(state=state)
+    # Restore the PKCE verifier generated during the login step.
+    flow.code_verifier = code_verifier
     flow.fetch_token(authorization_response=authorization_response_url)
     _save_credentials(flow.credentials)
 
