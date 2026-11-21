@@ -45,6 +45,27 @@ async def existing_ids(db: aiosqlite.Connection, file_ids: list[str]) -> set[str
     return {row["id"] for row in await cur.fetchall()}
 
 
+async def done_ids(db: aiosqlite.Connection, file_ids: list[str]) -> set[str]:
+    """Return file_ids that are already finished (classified or failed).
+
+    Used to decide what to skip on a scan/resume: items still 'pending' (e.g.
+    inserted but not classified before an interrupt) are NOT returned, so they
+    get re-processed instead of being orphaned.
+    """
+    if not file_ids:
+        return set()
+    placeholders = ",".join("?" for _ in file_ids)
+    cur = await db.execute(
+        f"""
+        SELECT id FROM photos
+        WHERE id IN ({placeholders})
+          AND classification_status IN ('classified', 'failed')
+        """,
+        file_ids,
+    )
+    return {row["id"] for row in await cur.fetchall()}
+
+
 async def insert_photo_metadata(
     db: aiosqlite.Connection, meta: dict[str, Any], scan_batch: str
 ) -> None:

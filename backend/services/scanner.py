@@ -104,8 +104,10 @@ async def _process_new_files(scan_id: str, files: list[dict], classifier) -> Non
         return
 
     async with get_db() as db:
-        known = await models.existing_ids(db, [f["id"] for f in files])
-        new_files = [f for f in files if f["id"] not in known]
+        # Skip only items that are already finished; re-process anything still
+        # 'pending' (e.g. inserted but not classified before an interrupt).
+        done = await models.done_ids(db, [f["id"] for f in files])
+        new_files = [f for f in files if f["id"] not in done]
         for f in new_files:
             await models.insert_photo_metadata(db, f, scan_batch=scan_id)
         await models.update_scan_progress(db, scan_id, total_files=len(new_files))
