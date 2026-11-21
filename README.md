@@ -5,8 +5,9 @@ System One model), then review, filter, and bulk-trash unwanted photos from a we
 UI. Deletions are **trash-only** — files go to Google Drive's trash (30-day
 recovery), never permanent delete.
 
-> Status: backend complete and verified against the live Jev API. Frontend in
-> progress.
+> Status: backend complete and verified against the live Jev API; React
+> frontend built and type-checked. Ready to run once you add Google Drive
+> OAuth credentials and a TypeSafe API key.
 
 ## Architecture
 
