@@ -222,6 +222,17 @@ async def ids_matching_filter(
     return [r["id"] for r in await cur.fetchall()]
 
 
+async def id_sizes_matching_filter(
+    db: aiosqlite.Connection, params: dict[str, Any]
+) -> list[dict]:
+    """Return {id, size_bytes} for every photo matching a filter (select-all)."""
+    where, args = _build_filters(params)
+    cur = await db.execute(
+        f"SELECT id, COALESCE(size_bytes, 0) AS size_bytes FROM photos{where}", args
+    )
+    return [dict(r) for r in await cur.fetchall()]
+
+
 async def failed_items(db: aiosqlite.Connection) -> list[dict]:
     """Return failed photos/videos shaped for the scanner's item handlers."""
     cur = await db.execute(

@@ -58,6 +58,21 @@ export const client = {
     return data as PhotoPage;
   },
 
+  async photoIds(filters: Filters) {
+    // Reuse the paginated param builder but drop pagination/sort keys.
+    const p = filtersToParams(filters, 1, 1);
+    delete (p as Record<string, unknown>).page;
+    delete (p as Record<string, unknown>).per_page;
+    delete (p as Record<string, unknown>).sort;
+    delete (p as Record<string, unknown>).order;
+    const { data } = await api.get("/api/photos/ids", { params: p });
+    return data as {
+      items: { id: string; size_bytes: number }[];
+      total: number;
+      total_size_bytes: number;
+    };
+  },
+
   async stats() {
     const { data } = await api.get("/api/stats");
     return data as Stats;

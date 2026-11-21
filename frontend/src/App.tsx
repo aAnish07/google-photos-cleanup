@@ -94,6 +94,18 @@ export default function App() {
     },
   });
 
+  const selectAllMatching = useMutation({
+    mutationFn: () => client.photoIds(filters),
+    onSuccess: (res) => {
+      setSelected(new Set(res.items.map((i) => i.id)));
+      setSizeMap((prev) => {
+        const next = new Map(prev);
+        for (const i of res.items) next.set(i.id, i.size_bytes ?? 0);
+        return next;
+      });
+    },
+  });
+
   const trashByFilter = useMutation({
     mutationFn: (token?: string) => client.trashByFilter(filters, token),
     onSuccess: (res) => {
@@ -198,8 +210,10 @@ export default function App() {
             filterTotal={data?.total ?? 0}
             hasActiveFilters={hasActiveFilters(filters)}
             busy={busy}
+            selectAllBusy={selectAllMatching.isPending}
             undoAvailable={undoAvailable}
             onClear={() => setSelected(new Set())}
+            onSelectAllMatching={() => selectAllMatching.mutate()}
             onTrashSelected={() => trashSelected.mutate()}
             onTrashByFilter={() => trashByFilter.mutate(undefined)}
             onUndo={() => undo.mutate()}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Filter, Loader2, Trash2, Undo2, X } from "lucide-react";
+import { CheckSquare, Filter, Loader2, Trash2, Undo2, X } from "lucide-react";
 import { formatBytes } from "../types";
 
 interface Props {
@@ -8,8 +8,10 @@ interface Props {
   filterTotal: number;
   hasActiveFilters: boolean;
   busy: boolean;
+  selectAllBusy: boolean;
   undoAvailable: boolean;
   onClear: () => void;
+  onSelectAllMatching: () => void;
   onTrashSelected: () => void;
   onTrashByFilter: () => void;
   onUndo: () => void;
@@ -21,8 +23,10 @@ export default function BulkActions({
   filterTotal,
   hasActiveFilters,
   busy,
+  selectAllBusy,
   undoAvailable,
   onClear,
+  onSelectAllMatching,
   onTrashSelected,
   onTrashByFilter,
   onUndo,
@@ -30,12 +34,11 @@ export default function BulkActions({
   const [confirm, setConfirm] = useState(false);
 
   const hasSelection = selectedCount > 0;
-  // Offer "trash all matching" whenever filters are active and something matches
-  // (even with no manual selection). Guarded on hasActiveFilters so it can never
-  // mean "trash the entire library".
-  const canTrashByFilter = hasActiveFilters && filterTotal > 0;
+  const canByFilter = hasActiveFilters && filterTotal > 0;
+  // Can we still expand the selection to cover every match?
+  const canSelectAll = canByFilter && selectedCount < filterTotal;
 
-  if (!hasSelection && !undoAvailable && !canTrashByFilter) return null;
+  if (!hasSelection && !undoAvailable && !canByFilter) return null;
 
   return (
     <>
@@ -54,7 +57,7 @@ export default function BulkActions({
                 {formatBytes(selectedSizeBytes)}
               </span>
             </>
-          ) : canTrashByFilter ? (
+          ) : canByFilter ? (
             <span className="flex items-center gap-1.5 text-slate-600">
               <Filter className="h-4 w-4 text-slate-400" />
               {filterTotal.toLocaleString()} photos match the current filters
@@ -65,6 +68,22 @@ export default function BulkActions({
         </div>
 
         <div className="flex items-center gap-2">
+          {canSelectAll && (
+            <button
+              onClick={onSelectAllMatching}
+              disabled={selectAllBusy || busy}
+              className="flex items-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+              title="Select every photo matching the current filters"
+            >
+              {selectAllBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckSquare className="h-4 w-4" />
+              )}
+              Select all {filterTotal.toLocaleString()} matching
+            </button>
+          )}
+
           {undoAvailable && (
             <button
               onClick={onUndo}
@@ -75,19 +94,7 @@ export default function BulkActions({
             </button>
           )}
 
-          {canTrashByFilter && (
-            <button
-              onClick={onTrashByFilter}
-              disabled={busy}
-              className="flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
-              title="Move every photo matching the current filters to Trash"
-            >
-              <Trash2 className="h-4 w-4" />
-              Trash all {filterTotal.toLocaleString()} matching
-            </button>
-          )}
-
-          {hasSelection && (
+          {hasSelection ? (
             <button
               onClick={() => setConfirm(true)}
               disabled={busy}
@@ -100,6 +107,18 @@ export default function BulkActions({
               )}
               Move {selectedCount.toLocaleString()} selected to Trash
             </button>
+          ) : (
+            canByFilter && (
+              <button
+                onClick={onTrashByFilter}
+                disabled={busy}
+                className="flex items-center gap-1.5 rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+                title="Move every photo matching the current filters to Trash"
+              >
+                <Trash2 className="h-4 w-4" />
+                Trash all {filterTotal.toLocaleString()} matching
+              </button>
+            )
           )}
         </div>
       </div>

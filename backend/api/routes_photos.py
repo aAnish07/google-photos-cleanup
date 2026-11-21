@@ -52,6 +52,43 @@ async def list_photos(
         return await models.query_photos(db, params)
 
 
+@router.get("/ids")
+async def photo_ids(
+    photo_type: Optional[str] = None,
+    keep_signal: Optional[str] = None,
+    has_text: Optional[str] = None,
+    quality_signal: Optional[str] = None,
+    classification_status: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    min_size: Optional[int] = None,
+    max_size: Optional[int] = None,
+    min_confidence: Optional[float] = None,
+    trashed: Optional[str] = "false",
+) -> dict:
+    """Return every photo id (+ size) matching the filter, for 'select all'."""
+    params = {
+        "photo_type": photo_type,
+        "keep_signal": keep_signal,
+        "has_text": has_text,
+        "quality_signal": quality_signal,
+        "classification_status": classification_status,
+        "date_from": date_from,
+        "date_to": date_to,
+        "min_size": min_size,
+        "max_size": max_size,
+        "min_confidence": min_confidence,
+        "trashed": trashed,
+    }
+    async with get_db() as db:
+        items = await models.id_sizes_matching_filter(db, params)
+    return {
+        "items": items,
+        "total": len(items),
+        "total_size_bytes": sum(i["size_bytes"] for i in items),
+    }
+
+
 @router.get("/{file_id}")
 async def get_photo(file_id: str) -> dict:
     async with get_db() as db:
