@@ -43,8 +43,11 @@ without the API (`CLASSIFIER_BACKEND=stub`).
 ## Prerequisites
 
 1. Python 3.11+, Node.js 18+
-2. A Google Cloud project with the **Drive API enabled** and an OAuth **Desktop**
-   client. Download it to `backend/auth/credentials.json`.
+2. A Google Cloud project with the **Drive API enabled** and an OAuth
+   **Web application** client. Add `http://localhost:8000/auth/callback` to the
+   client's **Authorized redirect URIs**, then download the JSON to
+   `backend/auth/credentials.json`. (The app uses a server-side callback, so use
+   the Web application type, not Desktop.)
 3. A TypeSafe API key — https://console.typesafe.ai (put it in `backend/.env`).
 
 ## Backend

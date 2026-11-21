@@ -1,6 +1,7 @@
 """Google OAuth2 flow and credential persistence for Drive access.
 
-Uses an installed/desktop OAuth client (`backend/auth/credentials.json`). After
+Uses a Web application OAuth client (`backend/auth/credentials.json`) with a
+server-side callback registered at OAUTH_REDIRECT_URI. After
 the user completes consent, the refresh token is stored in
 `backend/auth/token.json` and reused on subsequent runs.
 """
@@ -25,7 +26,9 @@ def _require_client_config() -> None:
     if not Path(CREDENTIALS_PATH).exists():
         raise CredentialsMissing(
             f"Google OAuth client config not found at {CREDENTIALS_PATH}. "
-            "Create a Desktop OAuth client in Google Cloud, enable the Drive API, "
+            "Create a Web application OAuth client in Google Cloud (with "
+            "http://localhost:8000/auth/callback as an authorized redirect URI), "
+            "enable the Drive API, "
             "and download it to backend/auth/credentials.json."
         )
 
