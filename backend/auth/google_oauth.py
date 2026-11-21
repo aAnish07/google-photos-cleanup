@@ -8,8 +8,19 @@ the user completes consent, the refresh token is stored in
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Optional
+
+# OAuth over a localhost HTTP callback (no TLS) is rejected by oauthlib unless
+# this is set. The app is designed to run locally at http://localhost, so allow
+# insecure transport here. Do NOT deploy this app over plain HTTP to a real host.
+if "OAUTHLIB_INSECURE_TRANSPORT" not in os.environ:
+    redirect = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8000/auth/callback")
+    if redirect.startswith("http://") and (
+        "localhost" in redirect or "127.0.0.1" in redirect
+    ):
+        os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
